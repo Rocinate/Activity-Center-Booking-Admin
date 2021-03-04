@@ -33,6 +33,7 @@
         />
       </el-select>
       <el-select
+        v-if="listQuery.campus == ''"
         v-model.number="listQuery.reserveHall"
         placeholder="场地"
         clearable
@@ -44,6 +45,36 @@
           :key="item"
           :label="Halls[item]"
           :value="Halls[item]"
+        />
+      </el-select>
+      <el-select
+        v-else-if="listQuery.campus == '清水河'"
+        v-model.number="listQuery.reserveHall"
+        placeholder="场地"
+        clearable
+        class="filter-item"
+        style="width: 200px"
+      >
+        <el-option
+          v-for="item in Object.keys(QSHalls)"
+          :key="item"
+          :label="QSHalls[item]"
+          :value="QSHalls[item]"
+        />
+      </el-select>
+      <el-select
+        v-else-if="listQuery.campus == '沙河'"
+        v-model.number="listQuery.reserveHall"
+        placeholder="场地"
+        clearable
+        class="filter-item"
+        style="width: 200px"
+      >
+        <el-option
+          v-for="item in Object.keys(SHHalls)"
+          :key="item"
+          :label="SHHalls[item]"
+          :value="SHHalls[item]"
         />
       </el-select>
       <el-select
@@ -101,7 +132,7 @@
       <!-- 使用时间段 -->
       <el-table-column label="使用时间" width="260px" align="center">
         <template slot-scope="{row}">
-          <span>{{ row.formalStart|parseTime('{m}-{d} {h}:{i}') }} —— {{ row.formalEnd|parseTime('{m}-{d} {h}:{i}') }}</span>
+          <span>{{ row.formalStart|parseTime('{m}-{d} {h}:{i}') }} — {{ row.formalEnd|parseTime('{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <!-- 预约场地 -->
@@ -122,13 +153,23 @@
           <span class="link-type">{{ ReviewStatus[row.reviewStatus + ''] }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="281" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="300" class-name="small-padding fixed-width">
         <template slot-scope="{row}">
           <el-button type="primary" size="mini" @click="checkDetail(row)">详情</el-button>
           <el-button size="mini" type="success" @click="audit(row)">审核</el-button>
           <el-button size="mini" type="primary" icon="el-icon-upload2">
             <a download :href="`${BaseUrl}${row.aid}`">导出</a>
           </el-button>
+          <el-popconfirm
+            confirm-button-text="确认"
+            cancel-button-text="取消"
+            icon="el-icon-info"
+            icon-color="red"
+            title="确定删除吗？"
+            style="margin-left: 10px"
+          >
+            <el-button slot="reference" type="danger" size="mini">删除</el-button>
+          </el-popconfirm>
         </template>
       </el-table-column>
     </el-table>
@@ -245,7 +286,7 @@
 // import { fetchList } from '@/api/article'
 import { parseTime } from '@/utils'
 import Pagination from '@/components/Pagination' // secondary package based on el-pagination
-import { Campuses, Halls, Department, Authority, ActivityType, ReviewStatus } from '../../utils/StaticData'
+import { Campuses, Halls, QSHalls, SHHalls, Department, Authority, ActivityType, ReviewStatus } from '../../utils/StaticData'
 import { handleFilter } from '../../utils/formHandlers'
 import { approve, filterApprove } from '../../api/approve'
 import { getExcel } from '@/api/excel'
@@ -292,9 +333,10 @@ export default {
       dialogFormVisible: false,
       downloadLoading: false,
       searchTimer: null,
-      Campuses, Halls, Department, Authority, ActivityType, ReviewStatus,
+      Campuses, Halls, Department, Authority, ActivityType, ReviewStatus, QSHalls, SHHalls,
       halls: this.Halls,
-      campuses: this.Campuses
+      campuses: this.Campuses,
+      delvisible: false
     }
   },
   mounted() {
@@ -311,6 +353,9 @@ export default {
       // }
       // 然后再展示出来进行审核
       // 需要一个loading效果
+    },
+    del(row) {
+
     },
     // 点击审核选中项时触发
     auditGroup() {
@@ -336,6 +381,7 @@ export default {
       this.imgToCheck = val.imageUrl
     },
     _handleFilter() {
+      console.log(this.listQuery.campus)
       this.listQuery.DisplayPage = 1
       handleFilter(this, this.getList)
     },
