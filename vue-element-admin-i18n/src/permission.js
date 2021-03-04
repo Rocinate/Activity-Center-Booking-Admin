@@ -3,9 +3,9 @@ import store from './store'
 import NProgress from 'nprogress' // progress bar
 import 'nprogress/nprogress.css' // progress bar style
 import { getUrlParams } from '@/utils/getURLParams'
+import { Message } from 'element-ui'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
-
 router.beforeEach(async(to, from, next) => {
   history.pushState = () => {}
   history.go = () => {}
@@ -38,14 +38,22 @@ router.beforeEach(async(to, from, next) => {
     next(to.path)
   } else if (!sessionStorage.getItem('name')) {
     // 未登录
-    sessionStorage.setItem('token', token)
-    sessionStorage.setItem('appId', appId)
-    await store.dispatch('user/login', { appId: appId, token: token })
-      .then(() => {
-        next('/overall/index')
+    if (token) {
+      sessionStorage.setItem('token', token)
+      sessionStorage.setItem('appId', appId)
+      await store.dispatch('user/login', { appId: appId, token: token })
+        .then(() => {
+          next('/overall/index')
+        })
+        .catch(() => {
+        })
+    } else {
+      Message({
+        message: 'token参数错误，请从正确的入口进入',
+        type: 'error',
+        duration: 3 * 1000
       })
-      .catch(() => {
-      })
+    }
   }
 })
 
